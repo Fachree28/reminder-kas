@@ -1,0 +1,26 @@
+name: Reminder Uang Kas
+
+on:
+  schedule:
+    # Cron GitHub pakai UTC. 22:45 UTC = 05:45 WIB keesokan harinya.
+    # Tanggal UTC 9-14 -> tanggal WIB 10-15.
+    # Sengaja 15 menit lebih awal karena jadwal GitHub sering telat.
+    - cron: "45 22 9-14 * *"
+  workflow_dispatch: # tombol "Run workflow" untuk tes manual
+
+jobs:
+  kirim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kirim pesan ke Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "Secret DISCORD_WEBHOOK_URL belum diisi."; exit 1
+          fi
+          PAYLOAD=$(jq -n --arg msg "@everyone **JANGAN LUPA BAYAR UANG KAS**" \
+            '{content: $msg, allowed_mentions: {parse: ["everyone"]}}')
+          curl -sS --fail-with-body -H "Content-Type: application/json" \
+            -d "$PAYLOAD" "$WEBHOOK_URL"
+          echo "Terkirim."
